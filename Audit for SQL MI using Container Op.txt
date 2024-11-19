@@ -1,0 +1,83 @@
+Audit for SQL MI using Container Option :
+
+
+1) Create Storage container
+2)Generate Shared access signature
+3)Copy URL
+4) Copy SAS Token
+5)Create credential in SQL using SAS token , URL
+6)Create Server audit using URL
+7)Create Server Audit Example
+  CREATE SERVER AUDIT SPECIFICATION HIPAA_Audit_Specification  
+FOR SERVER AUDIT HIPAA_Audit  
+    ADD (FAILED_LOGIN_GROUP)  
+    WITH (STATE=ON);  
+GO  
+
+8) Create Database Audit Example
+CREATE DATABASE AUDIT SPECIFICATION Audit_Data_Modification_On_All_Sales_Tables
+FOR SERVER AUDIT DataModification_Security_Audit ADD (
+    INSERT, UPDATE, DELETE ON SCHEMA::Sales BY SalesUK
+)
+WITH (STATE = ON);
+GO
+
+Audit for SQL MI using Azure Monitor Logs
+
+1) Go to diagnostic setting and enable
+2) Then choose SQLSecurityAuditEvents 
+3)Microsoft DevOps operations Audit Logs  is optional parameter
+4)We can choose target destination as Event Hub or Azure Monitor logs
+5) Then we can create Server Audit using 
+CREATE SERVER AUDIT [<your_audit_name>] TO EXTERNAL_MONITOR;
+GO
+
+6)Enable Server Audit
+
+ALTER SERVER AUDIT [<your_audit_name>]
+WITH (STATE = ON);
+GO
+
+7) Full Example of SQL Audit using Log workspace option
+
+-- Create audit without OPERATOR_AUDIT - Will audit standard SQL Audit events
+USE [master];
+GO
+
+CREATE SERVER AUDIT testingauditnodevops TO EXTERNAL_MONITOR;
+GO
+
+CREATE SERVER AUDIT SPECIFICATION testingaudit_Specification_nodevops
+FOR SERVER AUDIT testingauditnodevops ADD (SUCCESSFUL_LOGIN_GROUP),
+    ADD (BATCH_COMPLETED_GROUP),
+    ADD (FAILED_LOGIN_GROUP)
+WITH (STATE = ON);
+GO
+
+ALTER SERVER AUDIT testingauditnodevops
+    WITH (STATE = ON);
+GO
+
+-- Create separate audit without OPERATOR_AUDIT ON - Will audit Microsoft Support Operations
+USE [master]
+
+CREATE SERVER AUDIT testingauditdevops TO EXTERNAL_MONITOR
+    WITH (OPERATOR_AUDIT = ON);
+GO
+
+CREATE SERVER AUDIT SPECIFICATION testingaudit_Specification_devops
+FOR SERVER AUDIT testingauditdevops ADD (SUCCESSFUL_LOGIN_GROUP),
+    ADD (BATCH_COMPLETED_GROUP),
+    ADD (FAILED_LOGIN_GROUP)
+WITH (STATE = ON);
+GO
+
+ALTER SERVER AUDIT testingauditdevops
+    WITH (STATE = ON);
+GO
+
+
+
+Extended Events:
+
+At this point there is no option for Extended events into Log workspace. We can use same features as On-premises , only difference is storage is in containers.
